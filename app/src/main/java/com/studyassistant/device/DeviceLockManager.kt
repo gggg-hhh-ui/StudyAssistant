@@ -32,7 +32,9 @@ class DeviceLockManager(
 
     /** Returns true if device admin provisioning is allowed */
     val isDeviceAdminAvailable: Boolean
-        get() = devicePolicyManager.isProvisioningAllowed()
+        get() = devicePolicyManager.isProvisioningAllowed(
+            DevicePolicyManager.DEVICE_ADMIN_FEATURE_ALL_DEVICES
+        )
 
     /**
      * Creates an intent to request device admin permission.
