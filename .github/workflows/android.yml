@@ -20,37 +20,28 @@ jobs:
           distribution: 'temurin'
           java-version: '17'
 
-      - name: Download Gradle 8.4
-        run: |
-          curl -sL "https://mirrors.huaweicloud.com/gradle/gradle-8.4-bin.zip" -o /tmp/gradle.zip
-          unzip -q /tmp/gradle.zip -d /tmp/
-          echo "/tmp/gradle-8.4/bin" >> $GITHUB_PATH
-
-      - name: Make gradlew executable
-        run: chmod +x gradlew
-
-      - name: Prepare gradle wrapper JAR
-        run: |
-          if [ ! -f gradle/wrapper/gradle-wrapper.jar ]; then
-            curl -sL "https://github.com/gradle/gradle/raw/v8.4.0/gradle/wrapper/gradle-wrapper.jar" \
-              -o gradle/wrapper/gradle-wrapper.jar
-          fi
-
-      - name: Cache Gradle packages
-        uses: actions/cache@v4
+      - name: Setup Gradle
+        uses: gradle/gradle-build-action@v2
         with:
-          path: |
-            ~/.gradle/caches
-            ~/.gradle/wrapper
-          key: gradle-84-jdk17-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
-          restore-keys: |
-            gradle-84-jdk17-
+          gradle-version: 8.4
+          gradle-distribution-type: bin
+          gradle-download-base-uri: https://mirrors.huaweicloud.com/gradle
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
+
+      - name: Create local.properties
+        run: |
+          echo "sdk.dir=$ANDROID_HOME" > local.properties
 
       - name: Build debug APK
-        run: ./gradlew assembleDebug --no-daemon --warning-mode=all
+        run: ./gradlew assembleDebug --no-daemon --stacktrace
+        env:
+          GRADLE_OPTS: "-Dorg.gradle.jvmargs=-Xmx2048m"
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: app-debug
           path: app/build/outputs/apk/debug/app-debug.apk
