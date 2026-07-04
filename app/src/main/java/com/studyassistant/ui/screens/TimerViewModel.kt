@@ -2,7 +2,6 @@ package com.studyassistant.ui.screens
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.studyassistant.domain.model.PRESET_DURATIONS
 import com.studyassistant.domain.model.TimerState
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
@@ -22,8 +21,7 @@ class TimerViewModel : ViewModel() {
     private val _customMinutes = MutableStateFlow("")
     val customMinutes: StateFlow<String> = _customMinutes.asStateFlow()
 
-    private var countdownJob: Job? = null
-    private var totalSeconds: Int = 0
+    private var timerJob: Job? = null
 
     fun selectPreset(minutes: Int) {
         _selectedMinutes.value = minutes
@@ -32,27 +30,30 @@ class TimerViewModel : ViewModel() {
 
     fun updateCustomMinutes(value: String) {
         _customMinutes.value = value
-        val parsed = value.toIntOrNull()
-        if (parsed != null && parsed in 1..180) {
-            _selectedMinutes.value = parsed
+        if (value.isNotEmpty()) {
+            val parsed = value.toIntOrNull() ?: 0
+            if (parsed in 1..180) {
+                _selectedMinutes.value = parsed
+            }
         }
     }
 
     fun startTimer() {
-        val durationMinutes = _selectedMinutes.value
-        if (durationMinutes <= 0) return
+        val minutes = _selectedMinutes.value
+        if (minutes <= 0) return
 
-        totalSeconds = durationMinutes * 60
+        timerJob?.cancel()
+        val totalSeconds = minutes * 60
+
         _timerState.value = TimerState.Running(
             totalSeconds = totalSeconds,
             remainingSeconds = totalSeconds
         )
 
-        countdownJob?.cancel()
-        countdownJob = viewModelScope.launch {
+        timerJob = viewModelScope.launch {
             var remaining = totalSeconds
             while (remaining > 0) {
-                delay(1000)
+                delay(1000L)
                 remaining--
                 _timerState.value = TimerState.Running(
                     totalSeconds = totalSeconds,
@@ -64,17 +65,19 @@ class TimerViewModel : ViewModel() {
     }
 
     fun cancelTimer() {
-        countdownJob?.cancel()
-        countdownJob = null
+        timerJob?.cancel()
+        timerJob = null
         _timerState.value = TimerState.Idle
     }
 
     fun resetAfterFinished() {
+        timerJob?.cancel()
+        timerJob = null
         _timerState.value = TimerState.Idle
     }
 
     override fun onCleared() {
         super.onCleared()
-        countdownJob?.cancel()
+        timerJob?.cancel()
     }
 }

@@ -3,10 +3,10 @@ package com.studyassistant.device
 import android.app.admin.DevicePolicyManager
 import android.content.ComponentName
 import android.content.Context
+import android.content.Intent
 import android.media.AudioManager
 import android.os.Build
 import android.os.PowerManager
-import android.view.WindowManager
 import androidx.activity.ComponentActivity
 
 /**
@@ -30,15 +30,13 @@ class DeviceLockManager(
     val isDeviceAdminActive: Boolean
         get() = devicePolicyManager.isAdminActive(adminComponent)
 
-    /** Returns true if device admin permission is available */
+    /** Returns true if device admin provisioning is allowed */
     val isDeviceAdminAvailable: Boolean
-        get() = devicePolicyManager.isProvisioningAllowed(
-            DevicePolicyManager.DEVICE_ADMIN_FEATURE_ALL_DEVICES
-        )
+        get() = devicePolicyManager.isProvisioningAllowed()
 
     /**
-     * Enables device admin. Should be called before lockDevice().
-     * This launches the admin enable intent.
+     * Creates an intent to request device admin permission.
+     * Launch this via ActivityResultLauncher.
      */
     fun requestDeviceAdmin(): Intent {
         return Intent(DevicePolicyManager.ACTION_ADD_DEVICE_ADMIN).apply {
@@ -69,6 +67,7 @@ class DeviceLockManager(
 
                 // Wake up the device
                 val powerManager = activity.getSystemService(Context.POWER_SERVICE) as PowerManager
+                @Suppress("WakelockTimeout")
                 val wakeLock = powerManager.newWakeLock(
                     PowerManager.SCREEN_BRIGHT_WAKE_LOCK or
                             PowerManager.ACQUIRE_CAUSES_WAKEUP or
@@ -118,9 +117,9 @@ class DeviceLockManager(
     private fun muteAudio() {
         savedRingerMode = audioManager.ringerMode
         try {
+            @Suppress("MuteRingerMode")
             audioManager.ringerMode = AudioManager.RINGER_MODE_SILENT
         } catch (e: Exception) {
-            // Some devices may not allow this without special permissions
             e.printStackTrace()
         }
     }
