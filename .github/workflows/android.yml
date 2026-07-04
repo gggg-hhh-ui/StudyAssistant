@@ -23,33 +23,8 @@ jobs:
       - name: Setup Android SDK
         uses: android-actions/setup-android@v2
 
-      - name: Fix gradle-wrapper.jar
-        run: |
-          # Download gradle-wrapper.jar from Tencent Maven mirror (faster in CN)
-          curl -sL "https://mirrors.cloud.tencent.com/gradle/distributions/gradle-8.4-bin.zip" -o /tmp/gradle.zip
-          # Extract wrapper jar from distribution
-          python3 -c "
-          import zipfile, io, os
-          with zipfile.ZipFile('/tmp/gradle.zip', 'r') as z:
-              main = z.read('gradle-8.4/lib/plugins/gradle-wrapper-8.4.jar')
-              shared = z.read('gradle-8.4/lib/gradle-wrapper-shared-8.4.jar')
-          mjar = zipfile.ZipFile(io.BytesIO(main), 'r')
-          sjar = zipfile.ZipFile(io.BytesIO(shared), 'r')
-          out = io.BytesIO()
-          with zipfile.ZipFile(out, 'w', zipfile.ZIP_DEFLATED) as merged:
-              for item in mjar.namelist():
-                  merged.writestr(item, mjar.read(item))
-              for item in sjar.namelist():
-                  if item not in mjar.namelist():
-                      merged.writestr(item, sjar.read(item))
-          with open('gradle/wrapper/gradle-wrapper.jar', 'wb') as f:
-              f.write(out.getvalue())
-          print('Wrapper JAR written:', os.path.getsize('gradle/wrapper/gradle-wrapper.jar'), 'bytes')
-          "
-
       - name: Create local.properties
-        run: |
-          echo "sdk.dir=$ANDROID_HOME" > local.properties
+        run: echo "sdk.dir=$ANDROID_HOME" > local.properties
 
       - name: Build debug APK
         run: ./gradlew assembleDebug --no-daemon --stacktrace
