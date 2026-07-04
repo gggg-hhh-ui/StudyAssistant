@@ -1,0 +1,54 @@
+name: Build Android APK
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up JDK 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Gradle
+        run: |
+          cd gradle/wrapper
+          if [ ! -f gradle-wrapper.jar ]; then
+            echo "Downloading gradle-wrapper.jar..."
+            curl -sL "https://mirrors.huaweicloud.com/gradle/gradle-8.4-bin.zip" --compressed -o /tmp/gradle.zip
+            unzip -j /tmp/gradle.zip "gradle-8.4/lib/plugins/gradle-wrapper-*.jar" -d gradle/wrapper/
+            rm /tmp/gradle.zip
+          fi
+
+      - name: Make gradlew executable
+        run: chmod +x gradlew
+
+      - name: Cache Gradle packages
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+          key: gradle-8.4-jdk17-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties') }}
+          restore-keys: |
+            gradle-8.4-jdk17-
+
+      - name: Build debug APK
+        run: ./gradlew assembleDebug --no-daemon --warning-mode=all
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-debug
+          path: app/build/outputs/apk/debug/app-debug.apk
+          retention-days: 7
