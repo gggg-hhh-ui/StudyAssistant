@@ -465,7 +465,7 @@ class MathProblemGenerator(
                 val b = random.nextInt(-10, 20)
                 val x = random.nextInt(1, 10)
                 MathProblem(
-                    question = "y=${a}x+$b, x=$x时,y=?",
+                    question = "y=${a}x+$b, x=${x}时,y=?",
                     answer = a * x + b,
                     difficulty = Difficulty.MEDIUM,
                     grade = 8

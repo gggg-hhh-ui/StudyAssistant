@@ -164,12 +164,13 @@ private fun MainContent(
     }
 
     // 紧急解锁处理（连续点击5次）
+    val context = androidx.compose.ui.platform.LocalContext.current
     val onEmergencyUnlock: () -> Unit = {
         if (deviceLockManager.handleEmergencyUnlockAttempt()) {
             viewModel.cancelTimer()
             viewModel.resetAfterFinished()
             Toast.makeText(
-                androidx.compose.ui.platform.LocalContext.current,
+                context,
                 "紧急解锁成功",
                 Toast.LENGTH_SHORT
             ).show()
@@ -177,7 +178,7 @@ private fun MainContent(
             val remaining = 5 - deviceLockManager.getEmergencyUnlockProgress()
             if (remaining > 0) {
                 Toast.makeText(
-                    androidx.compose.ui.platform.LocalContext.current,
+                    context,
                     "再点击 $remaining 次紧急解锁",
                     Toast.LENGTH_SHORT
                 ).show()
